@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposal Factory — 提案書ドラフト作成</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F6F3; --panel:#FFFFFF; --panel2:#FBFBF9;
+  --ink:#191916; --ink2:#4E4E48; --mut:#8B8B82;
+  --hair:#E6E6E0; --hair2:#D5D5CC;
+  --green:#26890D; --green-deep:#046A38; --lime:#86BC25; --pale:#EFF5E2; --pale2:#F7FAEE;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --warn-bg:#FBF6E7; --warn-bd:#E3D5A5; --warn-tx:#78621E;
+  --shadow:0 1px 2px rgba(20,20,10,.04),0 8px 24px rgba(20,20,10,.06);
+  --shadow-lg:0 2px 4px rgba(20,20,10,.05),0 20px 48px rgba(20,20,10,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased}
+::selection{background:var(--pale)}
+
+/* ── header ── */
+header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--hair)}
+.hwrap{max-width:1240px;margin:0 auto;padding:0 28px;height:56px;display:flex;align-items:center;gap:14px}
+.mark{width:22px;height:22px;background:linear-gradient(135deg,var(--green),var(--green-deep));border-radius:5px;position:relative;flex:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.mark::after{content:'';position:absolute;inset:5px 10px 10px 5px;border:1.5px solid #fff;border-radius:1px;opacity:.9}
+.tname{font-weight:800;font-size:14.5px;letter-spacing:-.01em}
+.ttag{font-family:var(--mono);font-size:10px;color:var(--green);background:var(--pale);border-radius:4px;padding:3px 8px;font-weight:600;letter-spacing:.05em}
+.pipeline{margin-left:auto;display:flex;align-items:center;gap:0;font-family:var(--mono);font-size:10.5px}
+.pstage{display:flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--hair);color:var(--mut);background:var(--panel)}
+.pstage:first-child{border-radius:6px 0 0 6px}
+.pstage:last-child{border-radius:0 6px 6px 0}
+.pstage+.pstage{border-left:none}
+.pstage .pd{width:6px;height:6px;border-radius:50%;background:var(--hair2)}
+.pstage.on{color:var(--green);font-weight:600;background:var(--pale2)}
+.pstage.on .pd{background:var(--green);box-shadow:0 0 0 3px rgba(38,137,13,.15)}
+
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+
+/* ── intro ── */
+.intro{padding:40px 0 30px}
+.crumb{font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.06em;margin-bottom:12px}
+.crumb b{color:var(--green);font-weight:600}
+h1{font-size:23px;font-weight:800;letter-spacing:-.015em;margin-bottom:8px}
+.intro .lede{color:var(--ink2);max-width:70ch;font-size:13.5px}
+.intro .lede em{font-style:normal;font-weight:700;color:var(--ink);background:linear-gradient(transparent 62%,var(--pale) 62%)}
+.principles{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:10px;overflow:hidden;margin-top:26px;box-shadow:var(--shadow)}
+.pr{background:var(--panel);padding:16px 18px;position:relative}
+.pr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--green),var(--lime))}
+.pr .k{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:5px}
+.pr .v{font-size:12px;color:var(--ink2);line-height:1.7}
+.pr .v b{color:var(--ink)}
+
+/* ── workspace ── */
+.work{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:22px;padding:26px 0 70px;align-items:start}
+.formcol{background:var(--panel);border:1px solid var(--hair);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.fhead{display:flex;align-items:center;justify-content:space-between;padding:16px 26px;border-bottom:1px solid var(--hair);background:var(--panel2)}
+.fhead .t{font-size:14px;font-weight:800}
+.fhead .n{font-family:var(--mono);font-size:11px;color:var(--mut)}
+.rail{display:flex;border-bottom:1px solid var(--hair);overflow-x:auto;background:var(--panel2)}
+.ritem{display:flex;align-items:center;gap:7px;padding:11px 16px;font-size:12px;color:var(--mut);white-space:nowrap;border-bottom:2px solid transparent;cursor:default}
+.ritem .rn{font-family:var(--mono);font-size:10.5px}
+.ritem.active{color:var(--ink);font-weight:700;border-bottom-color:var(--green)}
+.ritem.done{color:var(--green)}
+.fbody{padding:30px 32px;min-height:420px}
+.fstep{display:none}
+.fstep.on{display:block;animation:fin .35s cubic-bezier(.16,1,.3,1)}
+@keyframes fin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fstep h3{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.fstep .hint{font-size:12px;color:var(--mut);margin:4px 0 24px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px}
+.field{margin-bottom:16px}
+.field label{display:flex;align-items:baseline;gap:6px;font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px}
+.field label b{color:var(--green)}
+.field label .why{font-weight:400;font-size:10.5px;color:var(--mut);font-family:var(--mono)}
+.field input,.field select,.field textarea{width:100%;background:var(--panel2);border:1px solid var(--hair2);border-radius:8px;font-family:inherit;font-size:13.5px;color:var(--ink);padding:10px 13px;outline:none;transition:border-color .18s,box-shadow .18s,background .18s}
+.field input:hover,.field select:hover,.field textarea:hover{border-color:#BFBFB4}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);background:#fff;box-shadow:0 0 0 3px rgba(38,137,13,.12)}
+.field textarea{min-height:92px;resize:vertical;line-height:1.75}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip-opt{position:relative;border:1px solid var(--hair2);border-radius:8px;padding:8px 15px;font-size:12.5px;font-weight:600;color:var(--ink2);cursor:pointer;user-select:none;transition:all .15s;background:var(--panel2)}
+.chip-opt:hover{border-color:var(--green);color:var(--green)}
+.chip-opt.sel{background:var(--pale);border-color:var(--green);color:var(--green-deep);padding-left:28px}
+.chip-opt.sel::before{content:'✓';position:absolute;left:11px;font-weight:700}
+.team-row{display:grid;grid-template-columns:1fr 150px 34px;gap:8px;margin-bottom:8px}
+.team-row button{background:none;border:1px solid var(--hair2);border-radius:8px;color:var(--mut);cursor:pointer;font-size:14px;transition:all .15s}
+.team-row button:hover{border-color:#C4655A;color:#C4655A}
+.addrow{background:none;border:1px dashed var(--hair2);border-radius:8px;padding:9px 16px;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .15s}
+.addrow:hover{border-color:var(--green);color:var(--green);background:var(--pale2)}
+.err{color:#B03E30;font-size:12px;margin-top:8px;display:none;font-weight:600}
+.ffoot{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--hair);padding:16px 26px;background:var(--panel2)}
+.note-io{font-family:var(--mono);font-size:10.5px;color:var(--mut)}
+.btn{font-family:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:11px 22px;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.btn-p{background:var(--green);color:#fff;box-shadow:0 1px 2px rgba(4,106,56,.3)}
+.btn-p:hover{background:var(--green-deep);transform:translateY(-1px)}
+.btn-g{background:var(--panel);border-color:var(--hair2);color:var(--ink2)}
+.btn-g:hover{border-color:var(--ink2)}
+#review{font-size:13px;line-height:2.1;color:var(--ink2);background:var(--panel2);border:1px solid var(--hair);border-radius:10px;padding:18px 22px}
+#review b{color:var(--ink)}
+
+/* ── live brief panel ── */
+.live{position:sticky;top:76px;background:var(--panel);border:1px solid var(--hair);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.live-h{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--hair);background:var(--panel2)}
+.live-h .t{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.live-h .pct{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--green)}
+.meter{height:3px;background:var(--hair)}
+.meter i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--lime));transition:width .4s cubic-bezier(.16,1,.3,1)}
+.live-b{padding:14px 18px;display:flex;flex-direction:column;gap:11px}
+.lrow .lk{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:1px}
+.lrow .lv{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.55;word-break:break-all}
+.lrow .lv.empty{color:var(--hair2);font-weight:400}
+.live-f{border-top:1px solid var(--hair);padding:11px 18px;font-size:11px;color:var(--mut);line-height:1.7}
+
+/* ── skeleton ── */
+.skel{display:none;border-top:1px solid var(--hair);background:linear-gradient(var(--panel2),var(--bg));padding:42px 0 80px}
+.skel.on{display:block}
+.skel h2{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.subnote{font-size:12.5px;color:var(--mut);margin:4px 0 20px;max-width:80ch}
+.plan-meta{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 6px}
+.meta-card{background:var(--panel);border:1px solid var(--hair);border-radius:9px;padding:10px 15px;min-width:128px;box-shadow:var(--shadow)}
+.meta-card .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
+.meta-card .v{font-size:13px;font-weight:700}
+.beats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:20px 0 4px}
+.beat{background:var(--panel);border:1px solid var(--hair);border-radius:8px;padding:11px 13px;position:relative;box-shadow:var(--shadow)}
+.beat::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;border-radius:3px 0 0 3px;background:var(--green)}
+.beat .n{font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--green);letter-spacing:.08em;margin-bottom:4px}
+.beat p{font-size:11.5px;line-height:1.65;color:var(--ink2)}
+.skel-note{display:inline-flex;gap:8px;background:var(--warn-bg);border:1px solid var(--warn-bd);border-radius:8px;padding:9px 15px;font-size:12px;color:var(--warn-tx);margin:20px 0 14px}
+.slides{display:flex;flex-direction:column;gap:9px}
+.sec-div{display:flex;align-items:center;gap:12px;margin-top:14px}
+.sec-div .lb{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;color:#fff;background:var(--green);border-radius:6px;padding:6px 14px}
+.sec-div .ln{flex:1;height:1px;background:var(--hair2)}
+.sec-div .add{font-family:var(--mono);font-size:10.5px;color:var(--mut);border:1px dashed var(--hair2);border-radius:6px;padding:4px 10px;cursor:pointer;background:none}
+.sec-div .add:hover{color:var(--green);border-color:var(--green)}
+.scard{display:grid;grid-template-columns:40px 128px minmax(0,1fr) 64px 26px;gap:14px;background:var(--panel);border:1.5px dashed var(--hair2);border-radius:9px;padding:13px 16px;align-items:start;box-shadow:var(--shadow)}
+.scard:hover{border-color:var(--green)}
+.scard .no{font-family:var(--mono);font-size:13.5px;font-weight:600;color:var(--mut);padding-top:2px}
+.scard .arch{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2);background:var(--panel2);border:1px solid var(--hair);border-radius:5px;padding:3px 8px;display:inline-block}
+.scard .ttl{font-size:13.5px;font-weight:700;margin-bottom:3px;outline:none;border-radius:4px;padding:1px 4px;margin-left:-4px}
+.scard .ttl:hover{background:var(--panel2)}
+.scard .ttl:focus{background:var(--pale)}
+.scard ul{list-style:none}
+.scard li{font-size:12px;color:var(--ink2);line-height:1.75;padding-left:14px;position:relative;outline:none;border-radius:4px}
+.scard li:hover{background:var(--panel2)}
+.scard li:focus{background:var(--pale)}
+.scard li::before{content:'—';position:absolute;left:2px;color:var(--hair2)}
+.scard .src{font-family:var(--mono);font-size:9.5px;font-weight:600;border-radius:5px;padding:3px 0;text-align:center}
+.src-gen{background:var(--pale);color:var(--green-deep)}
+.src-lib{background:#E9F0F6;color:#1F5A85}
+.src-team{background:#F2EAF6;color:#6E4390}
+.scard .del{background:none;border:none;color:var(--hair2);font-size:15px;cursor:pointer;padding:0;line-height:1}
+.scard .del:hover{color:#C4655A}
+.approve-bar{position:sticky;bottom:16px;margin-top:30px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border:1px solid var(--hair);border-radius:12px;padding:11px 16px;box-shadow:var(--shadow-lg)}
+.approved-note{display:none;text-align:center;margin-top:12px;font-weight:700;color:var(--green);font-size:13px}
+
+footer{border-top:1px solid var(--hair);padding:22px 0 30px;font-family:var(--mono);font-size:10.5px;color:var(--mut);background:var(--panel2)}
+
+@media(max-width:1000px){
+  .work{grid-template-columns:1fr}
+  .live{position:static;order:-1}
+  .live-b{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .principles{grid-template-columns:1fr 1fr}
+  .pipeline{display:none}
+  .grid2{grid-template-columns:1fr}
+  .beats{grid-template-columns:1fr 1fr}
+  .scard{grid-template-columns:34px minmax(0,1fr) 26px}
+  .scard .arch{margin-bottom:4px}
+  .scard ul{grid-column:1/-1}
+  .scard .src{grid-column:1/2;width:64px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="mark"></div>
+    <span class="tname">Proposal Factory</span>
+    <span class="ttag">INTERNAL</span>
+    <div class="pipeline">
+      <span class="pstage on" id="pl0"><span class="pd"></span>入力</span>
+      <span class="pstage" id="pl1"><span class="pd"></span>骨子</span>
+      <span class="pstage"><span class="pd"></span>承認</span>
+      <span class="pstage"><span class="pd"></span>生成</span>
+    </div>
+  </div>
+</header>
+
+<section class="intro wrap">
+  <div class="crumb">FACTORY <b>▸</b> 新規ドラフト</div>
+  <h1>提案書ドラフトの作成</h1>
+  <p class="lede">案件情報を入力すると、提案のストーリーと<em>骨子（スケルトン）</em>を起案します。レビューと合意は骨子の段階で行い、承認された骨子だけがデッキ生成の入力になります。<em>枚数は決めません</em>——内容が構成を決め、骨子上で自由に増減できます。</p>
+  <div class="principles">
+    <div class="pr"><div class="k">Layout</div><div class="v">レイアウトは<b>承認済みマスター規格</b>から適用。表はネイティブ表、バー・矢印は個別編集可能なpptxで出力。</div></div>
+    <div class="pr"><div class="k">Reuse</div><div class="v">前提条件・体制図・会社紹介などの定型は<b>ライブラリから挿入</b>。都度は作らない。</div></div>
+    <div class="pr"><div class="k">Review</div><div class="v">骨子とスライドは<b>Claude／ChatGPTの二系統</b>で相互レビュー。不一致は自動で解決せず人が判断。</div></div>
+    <div class="pr"><div class="k">Data</div><div class="v">入力は<b>ブラウザ内で処理</b>。送信は承認後の連携時のみ。マスターにクライアント情報は残さない。</div></div>
+  </div>
+</section>
+
+<section class="work wrap" id="form">
+  <div class="formcol">
+    <div class="fhead"><span class="t">案件情報</span><span class="n" id="stepCount">STEP 1 / 7</span></div>
+    <div class="rail" id="rail"></div>
+    <div class="fbody" id="formBody">
+
+      <div class="fstep on" data-step="0">
+        <h3>基本情報</h3>
+        <p class="hint">ドラフト起案に使う最小限の情報だけを聞きます。</p>
+        <div class="grid2">
+          <div class="field"><label>案件名 <b>＊</b></label><input id="f_title" placeholder="例：決算開示業務効率化支援 Phase2"></div>
+          <div class="field"><label>クライアント名 <b>＊</b><span class="why">→ 表紙・宛名</span></label><input id="f_client" placeholder="例：○○ホールディングス"></div>
+          <div class="field"><label>業界 <span class="why">→ 事例・語彙の選択</span></label><select id="f_industry"><option value="">選択してください</option><option>製造</option><option>金融・保険</option><option>小売・流通</option><option>情報通信</option><option>医薬・ヘルスケア</option><option>エネルギー・インフラ</option><option>サービス</option><option>その他</option></select></div>
+          <div class="field"><label>言語 <span class="why">→ 生成言語</span></label><div class="chips" data-single id="f_lang"><span class="chip-opt sel">日本語</span><span class="chip-opt">English</span></div></div>
+        </div>
+        <div class="err" id="err0">案件名とクライアント名を入力してください</div>
+      </div>
+
+      <div class="fstep" data-step="1">
+        <h3>案件タイプ・ソリューション</h3>
+        <p class="hint">構成テンプレートの分岐に使います。複数選択可。</p>
+        <div class="field"><label>案件タイプ <b>＊</b><span class="why">→ 構成の分岐</span></label>
+          <div class="chips" id="f_type"><span class="chip-opt" data-v="system">システム導入</span><span class="chip-opt" data-v="ai">AI導入</span><span class="chip-opt" data-v="bpr">BPR・業務改革</span><span class="chip-opt" data-v="ic">内部統制・J-SOX</span></div>
+        </div>
+        <div class="field"><label>対象ソリューション <span class="why">→ 説明スライドの選択</span></label>
+          <div class="chips" id="f_sol"><span class="chip-opt">BlackLine</span><span class="chip-opt">Workiva</span><span class="chip-opt">NetSuite</span><span class="chip-opt">OneStream</span><span class="chip-opt">生成AIツール</span><span class="chip-opt">その他・未定</span></div>
+        </div>
+        <div class="field"><label>スコープの概要 <span class="why">→ スコープ・前提スライド</span></label><textarea id="f_scope" placeholder="例：グループ3社の開示書類作成業務を対象に、テンプレート構築と自立運用の確立まで"></textarea></div>
+        <div class="err" id="err1">案件タイプを1つ以上選択してください</div>
+      </div>
+
+      <div class="fstep" data-step="2">
+        <h3>背景・課題</h3>
+        <p class="hint">「背景・目的」と課題構造化スライドの原料。具体的なほど骨子の精度が上がります。</p>
+        <div class="field"><label>クライアントの現状と課題 <b>＊</b><span class="why">→ 背景・課題スライド</span></label><textarea id="f_pain" placeholder="例：開示作成が属人化・手作業中心で、版管理や承認の統制面にも課題。決算は12営業日超"></textarea></div>
+        <div class="field"><label>案件のきっかけ・トリガー <span class="why">→ ストーリーの起点</span></label><textarea id="f_trigger" placeholder="例：新CFO就任により業務標準化の機運。先行フェーズのPoCが好評"></textarea></div>
+        <div class="grid2">
+          <div class="field"><label>競合状況 <span class="why">→ 訴求の力点</span></label><select id="f_comp"><option>単独指名</option><option>コンペ（競合あり）</option><option>既存ベンダーからのリプレース</option><option>不明</option></select></div>
+          <div class="field"><label>読み手・決裁プロセス <span class="why">→ トーン・粒度</span></label><input id="f_reader" placeholder="例：CFO決裁。経理部長が実質評価者"></div>
+        </div>
+        <div class="err" id="err2">現状と課題を入力してください</div>
+      </div>
+
+      <div class="fstep" data-step="3">
+        <h3>チーム体制</h3>
+        <p class="hint">体制図スライドの【氏名】スロットに反映されます。</p>
+        <div class="grid2">
+          <div class="field"><label>パートナー <b>＊</b></label><input id="f_partner" placeholder="氏名"></div>
+          <div class="field"><label>エンゲージメント・マネージャー <b>＊</b></label><input id="f_em" placeholder="氏名"></div>
+        </div>
+        <div class="field"><label>メンバー</label><div id="teamRows"></div><button class="addrow" id="addMember" type="button">＋ 追加</button></div>
+        <div class="err" id="err3">パートナーとEMを入力してください</div>
+      </div>
+
+      <div class="fstep" data-step="4">
+        <h3>ストーリーの狙い</h3>
+        <p class="hint">起案への演出指示。強調する点と、触れない論点。</p>
+        <div class="field"><label>強調したいポイント <span class="why">→ 強みスライド・全体トーン</span></label><textarea id="f_emph" placeholder="例：伴走型で内製化まで支援すること。先行フェーズの実績"></textarea></div>
+        <div class="field"><label>避けるべき論点 <span class="why">→ 除外指示</span></label><textarea id="f_avoid" placeholder="例：過去の失敗プロジェクトには触れない"></textarea></div>
+        <div class="field"><label>差別化要素 <span class="why">→ 強み・実績スライド</span></label><textarea id="f_diff" placeholder="例：同種案件の実績、認定資格保有者数"></textarea></div>
+      </div>
+
+      <div class="fstep" data-step="5">
+        <h3>必須スライド・制約</h3>
+        <p class="hint">ライブラリから必ず入れるものと、その他の制約。</p>
+        <div class="field"><label>必ず含める再利用スライド <span class="why">→ ライブラリ挿入</span></label>
+          <div class="chips" id="f_must"><span class="chip-opt sel">前提条件（2枚）</span><span class="chip-opt sel">体制図</span><span class="chip-opt">会社・サービス紹介</span><span class="chip-opt">ソリューション概要説明</span><span class="chip-opt">導入事例集</span><span class="chip-opt">セキュリティ・品質管理</span></div>
+        </div>
+        <div class="field"><label>その他の要望・制約</label><textarea id="f_notes" placeholder="例：見積は概算レンジで提示。英文サマリーを1枚追加"></textarea></div>
+      </div>
+
+      <div class="fstep" data-step="6">
+        <h3>入力内容の確認</h3>
+        <p class="hint">この内容で骨子を起案します。</p>
+        <div id="review"></div>
+      </div>
+
+    </div>
+    <div class="ffoot">
+      <button class="btn btn-g" id="prevBtn" style="visibility:hidden">← 戻る</button>
+      <span class="note-io">LOCAL — 入力はブラウザ内でのみ処理</span>
+      <button class="btn btn-p" id="nextBtn">次へ</button>
+    </div>
+  </div>
+
+  <aside class="live">
+    <div class="live-h"><span class="t">Brief — live</span><span class="pct" id="livePct">0%</span></div>
+    <div class="meter"><i id="meterBar"></i></div>
+    <div class="live-b" id="liveBody"></div>
+    <div class="live-f">このパネルは入力に合わせて更新されます。骨子起案時に brief.json としてまとまります。</div>
+  </aside>
+</section>
+
+<section class="skel" id="skel">
+  <div class="wrap">
+    <h2>骨子（スケルトン）</h2>
+    <p class="subnote">完成スライドではありません。タイトル・論点はクリックで編集、各セクションの「＋」でスライド追加、×で削除。チームで合意したら承認してください——承認済みの骨子だけがビルドの入力になります。</p>
+    <div class="plan-meta" id="planMeta"></div>
+    <div class="beats" id="beats"></div>
+    <div class="skel-note">枠1つ＝スライド1枚の骨子。レイアウトはビルド段階でマスター規格から適用されます。</div>
+    <div class="slides" id="slides"></div>
+    <div class="approve-bar">
+      <button class="btn btn-p" id="approveBtn">承認する</button>
+      <button class="btn btn-g" id="dlBrief">brief.json</button>
+      <button class="btn btn-g" id="dlPlan">deckplan.json</button>
+      <button class="btn btn-g" id="backToForm">フォームに戻る</button>
+    </div>
+    <p class="approved-note" id="approvedNote"></p>
+  </div>
+</section>
+
+<footer><div class="wrap">PROPOSAL FACTORY ｜ INTERNAL USE ONLY ｜ 入力データはブラウザ内で処理、承認後の連携時のみ送信。マスター・ライブラリにクライアント情報は保存されない。</div></footer>
+
+<script>
+// chips
+document.querySelectorAll('.chips').forEach(g=>{
+  g.addEventListener('click',e=>{
+    const c=e.target.closest('.chip-opt');if(!c)return;
+    if(g.hasAttribute('data-single')){g.querySelectorAll('.chip-opt').forEach(x=>x.classList.remove('sel'));c.classList.add('sel')}
+    else c.classList.toggle('sel');
+    updateLive();
+  });
+});
+// team rows
+const teamRows=document.getElementById('teamRows');
+function addMemberRow(name='',role='メンバー'){
+  const d=document.createElement('div');d.className='team-row';
+  d.innerHTML=`<div class="field" style="margin:0"><input placeholder="氏名" value="${name}"></div>
+  <div class="field" style="margin:0"><select><option${role==='リーダー'?' selected':''}>リーダー</option><option${role==='メンバー'?' selected':''}>メンバー</option><option${role==='SME'?' selected':''}>SME</option></select></div>
+  <button type="button" title="削除">×</button>`;
+  d.querySelector('button').onclick=()=>{d.remove();updateLive()};
+  d.querySelector('input').addEventListener('input',updateLive);
+  teamRows.appendChild(d);
+}
+addMemberRow();addMemberRow();
+document.getElementById('addMember').onclick=()=>addMemberRow();
+// wizard
+const stepNames=['基本情報','タイプ','背景・課題','チーム','ストーリー','必須・制約','確認'];
+const rail=document.getElementById('rail');
+stepNames.forEach((n,i)=>{const d=document.createElement('div');d.className='ritem'+(i===0?' active':'');d.innerHTML=`<span class="rn">${String(i+1).padStart(2,'0')}</span><span>${n}</span>`;rail.appendChild(d)});
+let cur=0;const total=7;
+const show=i=>{
+  document.querySelectorAll('.fstep').forEach(f=>f.classList.toggle('on',+f.dataset.step===i));
+  document.querySelectorAll('.ritem').forEach((p,j)=>{p.classList.toggle('active',j===i);p.classList.toggle('done',j<i)});
+  document.getElementById('prevBtn').style.visibility=i===0?'hidden':'visible';
+  document.getElementById('nextBtn').textContent=i===total-1?'骨子を起案する':'次へ';
+  document.getElementById('stepCount').textContent=`STEP ${i+1} / ${total}`;
+  if(i===total-1)buildReview();
+};
+const val=id=>document.getElementById(id).value.trim();
+const selChips=id=>[...document.querySelectorAll('#'+id+' .chip-opt.sel')].map(c=>c.dataset.v||c.textContent);
+function validate(i){
+  const sh=(id,bad)=>{document.getElementById(id).style.display=bad?'block':'none';return !bad};
+  if(i===0)return sh('err0',!val('f_title')||!val('f_client'));
+  if(i===1)return sh('err1',selChips('f_type').length===0);
+  if(i===2)return sh('err2',!val('f_pain'));
+  if(i===3)return sh('err3',!val('f_partner')||!val('f_em'));
+  return true;
+}
+document.getElementById('nextBtn').onclick=()=>{if(!validate(cur))return;if(cur<total-1){cur++;show(cur)}else{generate()}};
+document.getElementById('prevBtn').onclick=()=>{if(cur>0){cur--;show(cur)}};
+function team(){return [...teamRows.querySelectorAll('.team-row')].map(r=>({name:r.querySelector('input').value.trim(),role:r.querySelector('select').value})).filter(m=>m.name)}
+// live brief panel
+const liveFields=['f_title','f_client','f_industry','f_scope','f_pain','f_trigger','f_reader','f_partner','f_em','f_emph','f_avoid','f_diff','f_notes'];
+liveFields.forEach(id=>{const el=document.getElementById(id);el&&el.addEventListener('input',updateLive)});
+document.getElementById('f_comp').addEventListener('change',updateLive);
+document.getElementById('f_industry').addEventListener('change',updateLive);
+function updateLive(){
+  const rows=[
+    ['案件',val('f_title')],['クライアント',val('f_client')],
+    ['タイプ',selChips('f_type').map(v=>({system:'システム導入',ai:'AI導入',bpr:'BPR',ic:'内部統制'}[v]||v)).join('・')],
+    ['ソリューション',selChips('f_sol').join('・')],
+    ['体制',[val('f_partner')&&('P: '+val('f_partner')),val('f_em')&&('EM: '+val('f_em')),team().length?('+'+team().length+'名'):''].filter(Boolean).join(' / ')],
+    ['必須スライド',selChips('f_must').length+'点'],
+  ];
+  document.getElementById('liveBody').innerHTML=rows.map(([k,v])=>`<div class="lrow"><div class="lk">${k}</div><div class="lv${v?'':' empty'}">${v||'未入力'}</div></div>`).join('');
+  const req=[val('f_title'),val('f_client'),selChips('f_type').length,val('f_pain'),val('f_partner'),val('f_em')];
+  const opt=[val('f_industry'),selChips('f_sol').length,val('f_scope'),val('f_trigger'),val('f_reader'),val('f_emph'),val('f_diff')];
+  const pct=Math.round((req.filter(Boolean).length/req.length)*70+(opt.filter(Boolean).length/opt.length)*30);
+  document.getElementById('livePct').textContent=pct+'%';
+  document.getElementById('meterBar').style.width=pct+'%';
+}
+updateLive();
+function buildReview(){
+  document.getElementById('review').innerHTML=
+  `<b>${val('f_title')}</b>（${val('f_client')} ／ ${val('f_industry')||'業界未指定'}）<br>
+  タイプ：${selChips('f_type').join('・')||'—'}　ソリューション：${selChips('f_sol').join('・')||'未定'}<br>
+  体制：Partner ${val('f_partner')}／EM ${val('f_em')}／メンバー${team().length}名<br>
+  必須スライド：${selChips('f_must').join('・')||'なし'}　競合状況：${val('f_comp')}`;
+}
+// brief
+function brief(){
+  return {title:val('f_title'),client:val('f_client'),industry:val('f_industry'),
+    lang:selChips('f_lang')[0]||'日本語',types:selChips('f_type'),solutions:selChips('f_sol'),
+    scope:val('f_scope'),pain:val('f_pain'),trigger:val('f_trigger'),competition:val('f_comp'),
+    reader:val('f_reader'),team:{partner:val('f_partner'),em:val('f_em'),members:team()},
+    emphasis:val('f_emph'),avoid:val('f_avoid'),differentiators:val('f_diff'),
+    must_include:selChips('f_must'),notes:val('f_notes'),created:new Date().toISOString()};
+}
+// skeleton card helpers
+function cardHTML(arch,title,bullets,src){
+  const srcLabel={gen:'生成',lib:'再利用',team:'チーム'};
+  const srcCls={gen:'src-gen',lib:'src-lib',team:'src-team'};
+  return `<div class="scard" data-src="${src}"><div class="no"></div>
+    <div><span class="arch">${arch}</span></div>
+    <div><div class="ttl" contenteditable="true" spellcheck="false">${title}</div>
+    <ul>${bullets.map(x=>`<li contenteditable="true" spellcheck="false">${x}</li>`).join('')}</ul></div>
+    <span class="src ${srcCls[src]}">${srcLabel[src]}</span>
+    <button class="del" title="このスライドを削除">×</button></div>`;
+}
+function renumber(){
+  let n=0;
+  document.querySelectorAll('#slides .scard .no').forEach(el=>{el.textContent=String(++n).padStart(2,'0')});
+  const mc=document.querySelector('#planMeta .meta-card:nth-child(4) .v');
+  if(mc)mc.textContent=n+'枚（編集可）';
+}
+document.getElementById('slides').addEventListener('click',e=>{
+  if(e.target.classList.contains('del')){e.target.closest('.scard').remove();renumber();return}
+  if(e.target.classList.contains('add')){
+    const div=e.target.closest('.sec-div');
+    div.insertAdjacentHTML('afterend',cardHTML('narrative','（新規スライド）',['論点を入力'],'gen'));
+    renumber();
+  }
+});
+// skeleton generation — deterministic mock of the planning stage (M3で AI 起案に置換)
+function generate(){
+  const b=brief();
+  const sol=b.solutions.filter(s=>s!=='その他・未定')[0]||'対象ソリューション';
+  const tp=b.types;
+  const S=[];const D=t=>S.push({arch:'divider',title:t});
+  const A=(arch,title,bullets,src='gen')=>S.push({arch,title,bullets,src});
+  A('cover',`${b.title}のご提案`,[`${b.client} 御中`,'提出日・提出者（自動挿入）']);
+  A('toc','目次',['セクション構成（自動生成）']);
+  D('1. 背景・目的');
+  A('narrative','本プロジェクトの背景・目的',[
+    `背景：${(b.pain||'').slice(0,42)}…`,
+    b.trigger?`トリガー：${b.trigger.slice(0,38)}…`:'クライアントの重要施策との接続',
+    '本フェーズの目的・対象成果物・ゴール'],'lib');
+  if(b.must_include.some(m=>m.startsWith('前提条件'))){
+    A('narrative','本提案の前提条件（1/2）',['ソリューション・環境／スコープ／データ提供／構築・運用方式／推進方式'],'lib');
+    A('narrative','本提案の前提条件（2/2）',['レビュー・検収／変更管理／体制・環境／スケジュール／その他'],'lib');
+  }
+  D('2. 課題認識とアプローチ');
+  A('narrative','現状課題の構造化',[`${b.client}の課題をテーマ別に整理`,'優先順位づけと着手順']);
+  if(tp.includes('bpr')||tp.includes('system'))A('diagram','As-Is / To-Be 全体像',['現行業務の課題ポイント','To-Be像と変化点'],'lib');
+  A('process','全体アプローチ',['フェーズ構成と各フェーズの狙い','検討ステップと成果物の対応']);
+  if(tp.includes('system'))A('narrative',`${sol}の概要と適合性`,[`${sol}の標準機能と本件への適合`,'標準機能前提・カスタム範囲の考え方'],'lib');
+  if(tp.includes('ai'))A('diagram','AI活用ユースケースと実現方式',['対象業務とユースケース候補','PoC→本番化のステップ']);
+  if(tp.includes('ic'))A('narrative','統制強化の設計方針',['統制上の課題と対応方針','統制マトリクスの整備範囲']);
+  D('3. 進め方');
+  A('timeline','全体スケジュール',['フェーズ×月のガント','経営報告マイルストーン（★）']);
+  A('org','プロジェクト体制案',[`Partner：${b.team.partner}／EM：${b.team.em}／メンバー${b.team.members.length}名`,'貴社・当社・ベンダーの役割分担'],'team');
+  A('narrative','スコープと成果物',['当社作業と貴社作業の切り分け','成果物一覧と検収の考え方']);
+  D('4. 実績・体制の裏づけ');
+  if(b.must_include.includes('導入事例集'))A('mixed','関連する支援事例',['同種案件の実績サマリー','成果数値'],'lib');
+  A('narrative','本件における当社の強み',[b.differentiators?b.differentiators.slice(0,44)+'…':'専門性・実績・体制の整理','（強調指示を反映）']);
+  if(b.must_include.includes('会社・サービス紹介'))A('narrative','会社・サービス紹介',['ライブラリから挿入'],'lib');
+  if(b.must_include.includes('セキュリティ・品質管理'))A('narrative','セキュリティ・品質管理体制',['ライブラリから挿入'],'lib');
+  D('5. お見積り・次のステップ');
+  A('table','お見積り',[b.notes&&b.notes.includes('概算')?'概算レンジで提示（要望反映）':'フェーズ別・役務別の御見積','前提条件との対応']);
+  A('process','ご契約までの流れ',['提案説明→質疑→契約→キックオフ','想定日程']);
+  const nSlides=S.filter(s=>s.arch!=='divider').length;
+  const meta=[['案件',b.title],['クライアント',b.client],['タイプ',tp.map(v=>({system:'システム導入',ai:'AI導入',bpr:'BPR',ic:'内部統制'}[v]||v)).join('・')],['骨子スライド数',nSlides+'枚（編集可）'],['競合状況',b.competition]];
+  document.getElementById('planMeta').innerHTML=meta.map(([k,v])=>`<div class="meta-card"><div class="k">${k}</div><div class="v">${v||'—'}</div></div>`).join('');
+  const beats=[['BEAT 1','課題を正確に理解している（背景・構造化）'],['BEAT 2','解く順番と方法が明確（アプローチ・適合性）'],
+    ['BEAT 3','計画が現実的でリスクが管理されている（進め方・前提）'],['BEAT 4','任せられる体制がある（体制・実績）'],
+    ['BEAT 5','意思決定の材料が揃う（見積・次のステップ）']];
+  document.getElementById('beats').innerHTML=beats.map(([n,p])=>`<div class="beat"><div class="n">${n}</div><p>${p}</p></div>`).join('');
+  document.getElementById('slides').innerHTML=S.map(sl=>{
+    if(sl.arch==='divider')return `<div class="sec-div"><span class="lb">${sl.title}</span><span class="ln"></span><button class="add" type="button">＋ スライド追加</button></div>`;
+    return cardHTML(sl.arch,sl.title,sl.bullets,sl.src||'gen');
+  }).join('');
+  renumber();
+  window.__brief=b;
+  document.getElementById('pl0').classList.remove('on');
+  document.getElementById('pl1').classList.add('on');
+  document.getElementById('skel').classList.add('on');
+  document.getElementById('skel').scrollIntoView({behavior:'smooth'});
+}
+// approve / download
+function dl(name,obj){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.download=name;a.click()}
+function collectPlan(approved){
+  const out=[];let n=0;
+  [...document.querySelectorAll('#slides .scard, #slides .sec-div')].forEach(el=>{
+    if(el.classList.contains('sec-div')){out.push({type:'divider',title:el.querySelector('.lb').textContent});return}
+    n++;
+    out.push({type:'slide',n,archetype:el.querySelector('.arch').textContent,
+      title:el.querySelector('.ttl').textContent.trim(),
+      bullets:[...el.querySelectorAll('li')].map(li=>li.textContent.trim()).filter(Boolean),
+      source:el.querySelector('.src').textContent.trim()});
+  });
+  return {brief_title:window.__brief?.title,generated:new Date().toISOString(),approved:approved||null,slides:out};
+}
+document.getElementById('dlBrief').onclick=()=>dl('brief.json',window.__brief||{});
+document.getElementById('dlPlan').onclick=()=>dl('deckplan.json',collectPlan(null));
+// Backend intake webhook (n8n → runner → planning). Overridable via ?wh= for testing.
+const PF_WEBHOOK=new URLSearchParams(location.search).get('wh')
+  ||'https://n8n-n8n.avxdjj.easypanel.host/webhook/pf-intake';
+document.getElementById('approveBtn').onclick=async()=>{
+  const who=prompt('承認者名（Partner / EM）');if(!who)return;
+  const note=document.getElementById('approvedNote');
+  note.style.display='block';
+  const at=new Date().toISOString();
+  const plan=collectPlan({by:who,at});
+  const payload={...(window.__brief||{}),_approved_by:who,_approved_at:at,_deckplan:plan};
+  dl('deckplan_approved.json',plan); // local backup regardless of link result
+  note.textContent=`承認：${who}（${new Date().toLocaleString('ja-JP')}）— 起案を依頼しています…`;
+  try{
+    const r=await fetch(PF_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok){note.textContent=`承認：${who}（${new Date().toLocaleString('ja-JP')}）— `
+      +`起案を依頼しました（ID: ${j.slug||'受付済み'}）。バックエンドで骨子を作成中です。`;}
+    else{throw new Error('HTTP '+r.status);}
+  }catch(e){
+    note.textContent=`承認：${who} — バックエンド連携に失敗（${e.message}）。`
+      +`deckplan_approved.json を保存済み。ネットワーク/連携先をご確認ください。`;
+  }
+};
+document.getElementById('backToForm').onclick=()=>{document.getElementById('form').scrollIntoView({behavior:'smooth'})};
+</script>
+</body>
+</html>

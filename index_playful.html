@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposal Factory — コッシーと作る提案書ドラフト</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F6F3; --panel:#FFFFFF; --panel2:#FBFBF9;
+  --ink:#191916; --ink2:#4E4E48; --mut:#8B8B82;
+  --hair:#E7E7E1; --hair2:#DADAD2;
+  --green:#26890D; --green-deep:#046A38; --lime:#86BC25; --pale:#EFF5E2; --pale2:#F7FAEE;
+  --sun:#86BC25; --coral:#26890D; --sky:#7EC8E3;
+  --shadow:0 1px 2px rgba(25,25,22,.04),0 6px 20px rgba(25,25,22,.06);
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --bounce:cubic-bezier(.34,1.4,.64,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--pale)}
+
+header{position:sticky;top:0;z-index:100;background:rgba(244,248,236,.9);backdrop-filter:blur(10px);border-bottom:2px solid var(--hair)}
+.hwrap{max-width:1200px;margin:0 auto;padding:0 24px;height:58px;display:flex;align-items:center;gap:12px}
+.tname{font-weight:800;font-size:16px}
+.tname span{color:var(--green)}
+.ttag{font-family:var(--mono);font-size:10px;color:var(--green);background:var(--pale);border-radius:20px;padding:3px 10px;font-weight:600}
+.pipeline{margin-left:auto;display:flex;gap:6px;font-size:11px;font-weight:700}
+.pstage{padding:6px 13px;border-radius:20px;background:var(--panel);border:2px solid var(--hair);color:var(--mut);transition:all .3s var(--bounce)}
+.pstage.on{background:var(--green);border-color:var(--green);color:#fff;transform:scale(1.06)}
+
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px;position:relative}
+.intro{padding:44px 0 10px;display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:20px;align-items:center}
+h1{font-size:26px;font-weight:800;line-height:1.4}
+h1 mark{background:linear-gradient(transparent 55%,var(--sun) 55%);color:inherit;border-radius:2px}
+.lede{color:var(--ink2);max-width:60ch;margin-top:8px;font-size:13.5px}
+
+/* ── character ── */
+.stage{position:relative;display:flex;justify-content:center}
+.kosshi{position:relative;width:150px;cursor:pointer;user-select:none;animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.kosshi.jump{animation:jump .55s var(--bounce)}
+@keyframes jump{0%{transform:translateY(0) scale(1)}35%{transform:translateY(-26px) scale(1.05,0.95)}70%{transform:translateY(3px) scale(0.97,1.04)}100%{transform:translateY(0) scale(1)}}
+.kosshi.shake{animation:shake .5s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.antenna{position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:3px;height:22px;background:var(--green-deep);border-radius:2px}
+.antenna::after{content:'';position:absolute;top:-9px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:var(--sun);box-shadow:0 0 0 3px rgba(255,201,60,.3);animation:blinklight 2.4s infinite}
+@keyframes blinklight{0%,100%{background:var(--sun)}50%{background:var(--coral)}}
+.kbody{width:150px;height:130px;background:linear-gradient(160deg,var(--lime),var(--green));border-radius:34px;position:relative;box-shadow:0 12px 0 rgba(38,137,13,.18),inset 0 -8px 0 rgba(0,0,0,.08)}
+.face{position:absolute;inset:22px 20px 34px;background:#173312;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:16px;overflow:hidden}
+.eye{width:15px;height:22px;background:var(--lime);border-radius:9px;animation:blink 4.6s infinite}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.12)}}
+.mouth{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:26px;height:9px;border-radius:0 0 14px 14px;background:var(--lime);transition:all .3s}
+.kosshi.err .eye{height:6px;border-radius:3px;background:var(--coral)}
+.kosshi.err .mouth{width:12px;height:12px;border-radius:50%;background:var(--coral)}
+.kosshi.party .eye{height:22px;border-radius:0 0 12px 12px;transform:scaleY(.6) translateY(6px);background:var(--sun)}
+.kosshi.party .mouth{width:34px;height:14px;background:var(--sun)}
+.arm{position:absolute;top:56px;width:24px;height:44px;background:var(--green);border-radius:12px}
+.arm.l{left:-16px;transform:rotate(14deg)}
+.arm.r{right:-16px;transform:rotate(-14deg)}
+.kosshi.party .arm.l{transform:rotate(140deg);transition:transform .35s var(--bounce)}
+.kosshi.party .arm.r{transform:rotate(-140deg);transition:transform .35s var(--bounce)}
+.foot{position:absolute;bottom:-11px;width:34px;height:16px;background:var(--green-deep);border-radius:9px}
+.foot.l{left:26px}.foot.r{right:26px}
+.badge{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:rgba(255,255,255,.85);font-weight:600}
+.kname{text-align:center;font-size:11px;font-weight:800;color:var(--ink2);margin-top:18px}
+.kname span{font-family:var(--mono);font-size:9px;color:var(--mut);display:block;font-weight:400}
+
+/* speech bubble */
+.bubble{position:relative;background:var(--panel);border:2.5px solid var(--ink);border-radius:18px;padding:13px 17px;font-size:13px;font-weight:700;line-height:1.7;box-shadow:4px 4px 0 rgba(34,48,28,.12);min-height:64px;display:flex;align-items:center;transition:opacity .2s}
+.bubble.pop{animation:bpop .4s var(--bounce)}
+@keyframes bpop{0%{transform:scale(.92)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+.bubble::after{content:'';position:absolute;right:-13px;top:50%;transform:translateY(-50%) rotate(45deg);width:18px;height:18px;background:var(--panel);border-right:2.5px solid var(--ink);border-top:2.5px solid var(--ink)}
+@media(max-width:900px){.bubble::after{right:auto;left:50%;top:auto;bottom:-13px;transform:translateX(-50%) rotate(135deg)}}
+
+/* ── workspace ── */
+.work{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;padding:24px 0 80px;align-items:start}
+.formcol{background:var(--panel);border:2.5px solid var(--ink);border-radius:20px;box-shadow:7px 7px 0 rgba(34,48,28,.12);overflow:hidden}
+.fhead{display:flex;align-items:center;justify-content:space-between;padding:15px 24px;border-bottom:2px solid var(--hair);background:var(--panel2)}
+.fhead .t{font-size:15px;font-weight:800}
+.fhead .n{font-family:var(--mono);font-size:11px;color:var(--mut)}
+.rail{display:flex;border-bottom:2px solid var(--hair);overflow-x:auto;background:var(--panel2)}
+.ritem{display:flex;align-items:center;gap:6px;padding:11px 14px;font-size:12px;font-weight:700;color:var(--mut);white-space:nowrap;border-bottom:3px solid transparent}
+.ritem .rn{font-family:var(--mono);font-size:10px}
+.ritem.active{color:var(--green);border-bottom-color:var(--green)}
+.ritem.done{color:var(--lime)}
+.fbody{padding:28px 30px;min-height:400px}
+.fstep{display:none}
+.fstep.on{display:block;animation:fin .4s var(--bounce)}
+@keyframes fin{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
+.fstep h3{font-size:17px;font-weight:800}
+.fstep .hint{font-size:12px;color:var(--mut);margin:3px 0 22px;font-weight:500}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+.field{margin-bottom:15px}
+.field label{display:flex;align-items:baseline;gap:6px;font-size:12.5px;font-weight:800;color:var(--ink2);margin-bottom:6px}
+.field label b{color:var(--coral)}
+.field label .why{font-weight:500;font-size:10px;color:var(--mut);font-family:var(--mono)}
+.field input,.field select,.field textarea{width:100%;background:var(--panel2);border:2px solid var(--hair2);border-radius:12px;font-family:inherit;font-size:13.5px;font-weight:500;color:var(--ink);padding:10px 14px;outline:none;transition:all .18s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);background:#fff;box-shadow:0 0 0 4px rgba(134,188,37,.18);transform:translateY(-1px)}
+.field textarea{min-height:90px;resize:vertical}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip-opt{position:relative;border:2px solid var(--hair2);border-radius:20px;padding:8px 16px;font-size:12.5px;font-weight:700;color:var(--ink2);cursor:pointer;user-select:none;transition:all .18s var(--bounce);background:var(--panel2)}
+.chip-opt:hover{border-color:var(--green);transform:translateY(-2px)}
+.chip-opt.sel{background:var(--green);border-color:var(--green);color:#fff;padding-left:30px;transform:translateY(-1px)}
+.chip-opt.sel::before{content:'✓';position:absolute;left:12px;font-weight:800}
+.team-row{display:grid;grid-template-columns:1fr 150px 36px;gap:8px;margin-bottom:8px}
+.team-row button{background:none;border:2px solid var(--hair2);border-radius:10px;color:var(--mut);cursor:pointer;font-size:14px}
+.team-row button:hover{border-color:var(--coral);color:var(--coral)}
+.addrow{background:none;border:2px dashed var(--hair2);border-radius:12px;padding:9px 16px;font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;transition:all .18s}
+.addrow:hover{border-color:var(--green);color:var(--green);background:var(--pale)}
+.err{color:#D6543F;font-size:12px;margin-top:8px;display:none;font-weight:800}
+.ffoot{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:2px solid var(--hair);padding:15px 24px;background:var(--panel2)}
+.note-io{font-family:var(--mono);font-size:10px;color:var(--mut)}
+.btn{font-family:inherit;font-size:13.5px;font-weight:800;border-radius:14px;padding:12px 24px;cursor:pointer;border:2.5px solid var(--ink);transition:all .15s var(--bounce)}
+.btn-p{background:var(--green);color:#fff;box-shadow:3px 3px 0 var(--ink)}
+.btn-p:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.btn-p:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn-g{background:var(--panel);color:var(--ink2);box-shadow:3px 3px 0 rgba(34,48,28,.15)}
+.btn-g:hover{transform:translate(-1px,-1px)}
+#review{font-size:13px;line-height:2.1;color:var(--ink2);background:var(--panel2);border:2px dashed var(--hair2);border-radius:14px;padding:16px 20px;font-weight:500}
+#review b{color:var(--ink);font-weight:800}
+
+/* live panel */
+.live{position:sticky;top:80px;background:var(--panel);border:2.5px solid var(--ink);border-radius:20px;box-shadow:7px 7px 0 rgba(34,48,28,.12);overflow:hidden}
+.live-h{display:flex;align-items:center;justify-content:space-between;padding:12px 17px;border-bottom:2px solid var(--hair);background:var(--panel2)}
+.live-h .t{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--mut)}
+.live-h .pct{font-size:13px;font-weight:800;color:var(--green)}
+.meter{height:8px;background:var(--pale);border-bottom:2px solid var(--hair)}
+.meter i{display:block;height:100%;width:0%;background:repeating-linear-gradient(45deg,var(--lime),var(--lime) 8px,var(--green) 8px,var(--green) 16px);transition:width .5s var(--bounce)}
+.live-b{padding:13px 17px;display:flex;flex-direction:column;gap:10px}
+.lrow .lk{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:1px}
+.lrow .lv{font-size:12.5px;font-weight:700;line-height:1.5;word-break:break-all}
+.lrow .lv.empty{color:var(--hair2);font-weight:500}
+.live-f{border-top:2px solid var(--hair);padding:10px 17px;font-size:10.5px;color:var(--mut);font-weight:500}
+
+/* skeleton */
+.skel{display:none;border-top:2.5px dashed var(--hair2);padding:44px 0 90px;position:relative}
+.skel.on{display:block}
+.skel h2{font-size:20px;font-weight:800}
+.subnote{font-size:12.5px;color:var(--ink2);margin:4px 0 18px;max-width:80ch;font-weight:500}
+.plan-meta{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
+.meta-card{background:var(--panel);border:2px solid var(--ink);border-radius:14px;padding:9px 15px;min-width:120px;box-shadow:3px 3px 0 rgba(34,48,28,.1)}
+.meta-card .k{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.meta-card .v{font-size:13px;font-weight:800}
+.beats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:18px 0 4px}
+.beat{background:var(--panel);border:2px solid var(--hair2);border-radius:14px;padding:11px 13px;transition:transform .2s var(--bounce)}
+.beat:hover{transform:translateY(-3px);border-color:var(--green)}
+.beat .n{font-family:var(--mono);font-size:9px;font-weight:600;color:var(--green);letter-spacing:.08em;margin-bottom:3px}
+.beat p{font-size:11.5px;line-height:1.6;color:var(--ink2);font-weight:500}
+.skel-note{display:inline-flex;gap:8px;background:#FFF6DE;border:2px solid var(--sun);border-radius:14px;padding:9px 16px;font-size:12px;color:#8A6D1D;margin:18px 0 14px;font-weight:700}
+.slides{display:flex;flex-direction:column;gap:10px}
+.sec-div{display:flex;align-items:center;gap:12px;margin-top:14px}
+.sec-div .lb{font-size:12px;font-weight:800;color:#fff;background:var(--green);border-radius:20px;padding:6px 16px;box-shadow:2px 2px 0 rgba(34,48,28,.2)}
+.sec-div .ln{flex:1;height:2px;background:var(--hair2);border-radius:2px}
+.sec-div .add{font-size:11px;font-weight:800;color:var(--green);border:2px dashed var(--green);border-radius:20px;padding:5px 13px;cursor:pointer;background:var(--panel);transition:all .15s var(--bounce)}
+.sec-div .add:hover{background:var(--pale);transform:scale(1.04)}
+.scard{display:grid;grid-template-columns:42px 126px minmax(0,1fr) 64px 28px;gap:14px;background:var(--panel);border:2px dashed var(--hair2);border-radius:16px;padding:14px 16px;align-items:start;transition:all .18s}
+.scard:hover{border-color:var(--green);border-style:solid;box-shadow:4px 4px 0 rgba(38,137,13,.12)}
+.scard .no{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--mut);padding-top:2px}
+.scard .arch{font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2);background:var(--pale);border-radius:8px;padding:3px 9px;display:inline-block;font-weight:600}
+.scard .ttl{font-size:14px;font-weight:800;margin-bottom:3px;outline:none;border-radius:6px;padding:1px 5px;margin-left:-5px}
+.scard .ttl:focus{background:var(--pale)}
+.scard ul{list-style:none}
+.scard li{font-size:12px;color:var(--ink2);line-height:1.8;padding-left:16px;position:relative;outline:none;border-radius:6px;font-weight:500}
+.scard li:focus{background:var(--pale)}
+.scard li::before{content:'▸';position:absolute;left:3px;color:var(--lime)}
+.scard .src{font-size:10px;font-weight:800;border-radius:8px;padding:4px 0;text-align:center}
+.src-gen{background:var(--pale);color:var(--green-deep)}
+.src-lib{background:#E3F1F8;color:#22648C}
+.src-team{background:#F5E9F8;color:#7A4B94}
+.scard .del{background:none;border:none;color:var(--hair2);font-size:17px;cursor:pointer;line-height:1}
+.scard .del:hover{color:var(--coral);transform:scale(1.2)}
+.approve-bar{position:sticky;bottom:16px;margin-top:30px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;background:var(--panel);border:2.5px solid var(--ink);border-radius:20px;padding:12px 16px;box-shadow:6px 6px 0 rgba(34,48,28,.15)}
+.approved-note{display:none;text-align:center;margin-top:14px;font-weight:800;color:var(--green);font-size:14px}
+
+/* confetti */
+.confetti{position:fixed;top:-14px;width:10px;height:14px;z-index:999;pointer-events:none;animation:cfall linear forwards}
+@keyframes cfall{to{transform:translateY(105vh) rotate(720deg)}}
+
+footer{border-top:2px solid var(--hair);padding:20px 0 28px;font-family:var(--mono);font-size:10px;color:var(--mut)}
+
+@media(max-width:900px){
+  .intro{grid-template-columns:1fr;text-align:center}
+  .stage{order:-1}
+  .work{grid-template-columns:1fr}
+  .live{position:static}
+  .live-b{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid2{grid-template-columns:1fr}
+  .beats{grid-template-columns:1fr 1fr}
+  .pipeline{display:none}
+  .scard{grid-template-columns:34px minmax(0,1fr) 28px}
+  .scard ul{grid-column:1/-1}
+  .scard .src{grid-column:1;width:64px}
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Deloitte-professional chrome (keeps コッシー + interactions).
+   Overrides the neubrutalist look: hairlines, soft shadows,
+   standard radii/eases, muted accents. Standard Noto Sans JP font.
+   ───────────────────────────────────────────────────────────── */
+.ttag,.pstage,.chip-opt,.scard .arch,.scard .src,.sec-div .add,.addrow,#review{border-radius:4px}
+header{border-bottom-width:1px}
+.pstage{border-width:1px}
+.pstage.on{transform:none}
+h1{font-weight:700}
+h1 mark{background:linear-gradient(transparent 62%,var(--pale) 62%);border-radius:0}
+.fhead .t,.fstep h3,.skel h2{font-weight:700}
+.formcol,.live,.approve-bar{border:1px solid var(--hair);border-radius:12px;box-shadow:var(--shadow)}
+.fhead,.rail,.live-h,.ffoot,.meter{border-color:var(--hair);border-width:1px}
+.ritem{border-bottom-width:2px}
+.ritem.done{color:var(--green)}
+.fstep.on{animation:fin .3s ease}
+.field label b{color:var(--green)}
+.field input,.field select,.field textarea{border:1px solid var(--hair2);border-radius:8px;font-weight:400}
+.field input:focus,.field select:focus,.field textarea:focus{box-shadow:0 0 0 3px rgba(38,137,13,.12);transform:none}
+.chip-opt{border-width:1px;font-weight:600;transition:all .16s ease}
+.chip-opt:hover{transform:none}
+.chip-opt.sel{transform:none}
+.team-row button,.addrow{border-width:1px}
+.btn{border:1px solid var(--hair2);border-radius:8px;box-shadow:none;font-weight:700;transition:all .16s ease}
+.btn-p{background:var(--green);border-color:var(--green);box-shadow:none}
+.btn-p:hover{transform:none;background:var(--green-deep);box-shadow:0 2px 10px rgba(38,137,13,.22)}
+.btn-p:active{transform:none;box-shadow:none}
+.btn-g{box-shadow:none}
+.btn-g:hover{transform:none;border-color:var(--green);color:var(--green)}
+#review{border-width:1px;border-style:solid}
+.meta-card{border:1px solid var(--hair);border-radius:8px;box-shadow:none}
+.meta-card .v{font-weight:700}
+.beat{border:1px solid var(--hair);border-radius:8px;transition:border-color .18s ease}
+.beat:hover{transform:none;border-color:var(--green)}
+.skel{border-top:1px solid var(--hair)}
+.skel-note{background:var(--pale);border:1px solid var(--lime);border-radius:8px;color:var(--green-deep);font-weight:600}
+.slides .sec-div .lb{border-radius:4px;box-shadow:none;font-weight:700}
+.sec-div .ln{height:1px}
+.sec-div .add{border-width:1px}
+.sec-div .add:hover{transform:none}
+.scard{border:1px solid var(--hair);border-style:solid;border-radius:10px}
+.scard:hover{border-style:solid;border-color:var(--green);box-shadow:var(--shadow)}
+.scard .ttl{font-weight:700}
+.scard .del:hover{color:var(--green);transform:none}
+.approve-bar{border:1px solid var(--hair);border-radius:12px;box-shadow:var(--shadow)}
+.bubble{border:1px solid var(--hair);border-radius:12px;box-shadow:var(--shadow);font-weight:600}
+.bubble::after{border-color:var(--hair);border-width:1px}
+.kbody{box-shadow:0 8px 22px rgba(38,137,13,.16),inset 0 -6px 0 rgba(0,0,0,.06)}
+.meter i{transition:width .5s ease}
+footer{border-top-width:1px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <span class="tname">Proposal<span>Factory</span></span>
+    <span class="ttag">INTERNAL・あそびば版</span>
+    <div class="pipeline">
+      <span class="pstage on" id="pl0">入力</span><span class="pstage" id="pl1">骨子</span><span class="pstage">承認</span><span class="pstage">生成</span>
+    </div>
+  </div>
+</header>
+
+<section class="intro wrap">
+  <div>
+    <h1>コッシーと、<mark>提案書ドラフト</mark>をつくろう</h1>
+    <p class="lede">案件情報を入れると、コッシーが提案のストーリーと骨子を組み立てます。枚数は決めません——内容が構成を決めます。レビューと承認は骨子の段階で。</p>
+    <div class="bubble pop" id="bubble" style="margin-top:18px">やあ！ぼくコッシー。「骨子」担当ロボだよ。まずは案件の名前から教えて！</div>
+  </div>
+  <div class="stage">
+    <div>
+      <div class="kosshi" id="kosshi">
+        <div class="antenna"></div>
+        <div class="kbody">
+          <div class="face"><div class="eye"></div><div class="eye"></div><div class="mouth"></div></div>
+          <div class="badge">KSH-01</div>
+        </div>
+        <div class="arm l"></div><div class="arm r"></div>
+        <div class="foot l"></div><div class="foot r"></div>
+      </div>
+      <div class="kname">コッシー<span>KOSSHI — skeleton unit 01</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="work wrap" id="form">
+  <div class="formcol">
+    <div class="fhead"><span class="t">案件情報</span><span class="n" id="stepCount">STEP 1 / 7</span></div>
+    <div class="rail" id="rail"></div>
+    <div class="fbody" id="formBody">
+
+      <div class="fstep on" data-step="0">
+        <h3>基本情報</h3>
+        <p class="hint">ドラフト起案に使う最小限だけ聞くよ。</p>
+        <div class="grid2">
+          <div class="field"><label>案件名 <b>＊</b></label><input id="f_title" placeholder="例：決算開示業務効率化支援 Phase2"></div>
+          <div class="field"><label>クライアント名 <b>＊</b><span class="why">→ 表紙・宛名</span></label><input id="f_client" placeholder="例：○○ホールディングス"></div>
+          <div class="field"><label>業界 <span class="why">→ 事例・語彙</span></label><select id="f_industry"><option value="">選択してください</option><option>製造</option><option>金融・保険</option><option>小売・流通</option><option>情報通信</option><option>医薬・ヘルスケア</option><option>エネルギー・インフラ</option><option>サービス</option><option>その他</option></select></div>
+          <div class="field"><label>言語 <span class="why">→ 生成言語</span></label><div class="chips" data-single id="f_lang"><span class="chip-opt sel">日本語</span><span class="chip-opt">English</span></div></div>
+        </div>
+        <div class="err" id="err0">案件名とクライアント名、忘れてるよ！</div>
+      </div>
+
+      <div class="fstep" data-step="1">
+        <h3>案件タイプ・ソリューション</h3>
+        <p class="hint">構成の分岐に使うよ。複数OK。</p>
+        <div class="field"><label>案件タイプ <b>＊</b><span class="why">→ 構成の分岐</span></label>
+          <div class="chips" id="f_type"><span class="chip-opt" data-v="system">システム導入</span><span class="chip-opt" data-v="ai">AI導入</span><span class="chip-opt" data-v="bpr">BPR・業務改革</span><span class="chip-opt" data-v="ic">内部統制・J-SOX</span></div>
+        </div>
+        <div class="field"><label>対象ソリューション <span class="why">→ 説明スライド</span></label>
+          <div class="chips" id="f_sol"><span class="chip-opt">BlackLine</span><span class="chip-opt">Workiva</span><span class="chip-opt">NetSuite</span><span class="chip-opt">OneStream</span><span class="chip-opt">生成AIツール</span><span class="chip-opt">その他・未定</span></div>
+        </div>
+        <div class="field"><label>スコープの概要 <span class="why">→ スコープ・前提</span></label><textarea id="f_scope" placeholder="例：グループ3社の開示書類作成業務を対象に、テンプレート構築と自立運用の確立まで"></textarea></div>
+        <div class="err" id="err1">タイプを1つは選んでね！</div>
+      </div>
+
+      <div class="fstep" data-step="2">
+        <h3>背景・課題</h3>
+        <p class="hint">ここが一番大事。具体的なほど骨子がキレる。</p>
+        <div class="field"><label>クライアントの現状と課題 <b>＊</b><span class="why">→ 背景・課題スライド</span></label><textarea id="f_pain" placeholder="例：開示作成が属人化・手作業中心で、版管理や承認の統制面にも課題。決算は12営業日超"></textarea></div>
+        <div class="field"><label>きっかけ・トリガー <span class="why">→ ストーリー起点</span></label><textarea id="f_trigger" placeholder="例：新CFO就任により業務標準化の機運"></textarea></div>
+        <div class="grid2">
+          <div class="field"><label>競合状況 <span class="why">→ 訴求の力点</span></label><select id="f_comp"><option>単独指名</option><option>コンペ（競合あり）</option><option>既存ベンダーからのリプレース</option><option>不明</option></select></div>
+          <div class="field"><label>読み手・決裁 <span class="why">→ トーン・粒度</span></label><input id="f_reader" placeholder="例：CFO決裁。経理部長が実質評価者"></div>
+        </div>
+        <div class="err" id="err2">課題が空っぽだと骨子がスカスカになっちゃう！</div>
+      </div>
+
+      <div class="fstep" data-step="3">
+        <h3>チーム体制</h3>
+        <p class="hint">体制図スライドの【氏名】に入るよ。</p>
+        <div class="grid2">
+          <div class="field"><label>パートナー <b>＊</b></label><input id="f_partner" placeholder="氏名"></div>
+          <div class="field"><label>EM <b>＊</b></label><input id="f_em" placeholder="氏名"></div>
+        </div>
+        <div class="field"><label>メンバー</label><div id="teamRows"></div><button class="addrow" id="addMember" type="button">＋ 追加</button></div>
+        <div class="err" id="err3">パートナーとEMは必須だよ！</div>
+      </div>
+
+      <div class="fstep" data-step="4">
+        <h3>ストーリーの狙い</h3>
+        <p class="hint">演出指示。強調すること、触れないこと。</p>
+        <div class="field"><label>強調したいポイント <span class="why">→ 強み・トーン</span></label><textarea id="f_emph" placeholder="例：伴走型で内製化まで支援すること"></textarea></div>
+        <div class="field"><label>避けるべき論点 <span class="why">→ 除外指示</span></label><textarea id="f_avoid" placeholder="例：過去の失敗プロジェクトには触れない"></textarea></div>
+        <div class="field"><label>差別化要素 <span class="why">→ 強み・実績</span></label><textarea id="f_diff" placeholder="例：同種案件の実績、資格保有者数"></textarea></div>
+      </div>
+
+      <div class="fstep" data-step="5">
+        <h3>必須スライド・制約</h3>
+        <p class="hint">ライブラリから必ず入れるものを選んでね。</p>
+        <div class="field"><label>必ず含める再利用スライド <span class="why">→ ライブラリ挿入</span></label>
+          <div class="chips" id="f_must"><span class="chip-opt sel">前提条件（2枚）</span><span class="chip-opt sel">体制図</span><span class="chip-opt">会社・サービス紹介</span><span class="chip-opt">ソリューション概要説明</span><span class="chip-opt">導入事例集</span><span class="chip-opt">セキュリティ・品質管理</span></div>
+        </div>
+        <div class="field"><label>その他の要望・制約</label><textarea id="f_notes" placeholder="例：見積は概算レンジで提示"></textarea></div>
+      </div>
+
+      <div class="fstep" data-step="6">
+        <h3>入力内容の確認</h3>
+        <p class="hint">これでいく？よければ骨子を組むよ。</p>
+        <div id="review"></div>
+      </div>
+
+    </div>
+    <div class="ffoot">
+      <button class="btn btn-g" id="prevBtn" style="visibility:hidden">← 戻る</button>
+      <span class="note-io">LOCAL — 入力はブラウザ内だけ</span>
+      <button class="btn btn-p" id="nextBtn">次へ</button>
+    </div>
+  </div>
+
+  <aside class="live">
+    <div class="live-h"><span class="t">BRIEF — LIVE</span><span class="pct" id="livePct">0%</span></div>
+    <div class="meter"><i id="meterBar"></i></div>
+    <div class="live-b" id="liveBody"></div>
+    <div class="live-f">入力に合わせて更新。骨子起案時に brief.json になるよ。</div>
+  </aside>
+</section>
+
+<section class="skel wrap" id="skel">
+  <h2>骨子（スケルトン）できた！</h2>
+  <p class="subnote">これは骨子で、完成スライドじゃないよ。タイトル・論点はクリックで編集、「＋」で追加、×で削除。チームで合意したら承認してね——承認済みの骨子だけがビルドに進むよ。</p>
+  <div class="plan-meta" id="planMeta"></div>
+  <div class="beats" id="beats"></div>
+  <div class="skel-note">⚡ 枠1つ＝スライド1枚の骨子。見た目はビルド段階でマスター規格から適用。枚数は自由に増減してOK！</div>
+  <div class="slides" id="slides"></div>
+  <div class="approve-bar">
+    <button class="btn btn-p" id="approveBtn">承認する</button>
+    <button class="btn btn-g" id="dlBrief">brief.json</button>
+    <button class="btn btn-g" id="dlPlan">deckplan.json</button>
+    <button class="btn btn-g" id="backToForm">フォームに戻る</button>
+  </div>
+  <p class="approved-note" id="approvedNote"></p>
+</section>
+
+<footer><div class="wrap">PROPOSAL FACTORY ｜ INTERNAL USE ONLY ｜ 入力はブラウザ内処理・承認後の連携時のみ送信 ｜ backup: 標準版 index.html</div></footer>
+
+<script>
+// ---------- character ----------
+const kosshi=document.getElementById('kosshi');
+const bubble=document.getElementById('bubble');
+function say(msg,mood){
+  bubble.classList.remove('pop');void bubble.offsetWidth;
+  bubble.textContent=msg;bubble.classList.add('pop');
+  kosshi.classList.remove('jump','shake','err','party');void kosshi.offsetWidth;
+  if(mood==='jump')kosshi.classList.add('jump');
+  if(mood==='err'){kosshi.classList.add('shake','err');setTimeout(()=>kosshi.classList.remove('err'),1600)}
+  if(mood==='party')kosshi.classList.add('party');
+}
+kosshi.addEventListener('click',()=>{
+  const lines=['ぼくの仕事は骨子づくり。デッキの見た目はビルド班に任せてる','枚数はぼくが決めない。内容が決めるんだ','課題が具体的だとぼく、張り切るよ','承認もらえたらビルドに引き継ぐね'];
+  say(lines[Math.floor(Math.random()*lines.length)],'jump');
+});
+const stepMsgs=[
+  'まずは案件の名前から教えて！クライアント名は表紙に使うよ',
+  'どんなタイプの案件？構成がここで分岐するんだ',
+  'ここが一番大事！課題が具体的だと骨子がキレッキレになる',
+  'チームは誰？パートナーとEMは体制図に入るよ',
+  '強調したいこと、逆に触れちゃダメなこと、こっそり教えて',
+  'ライブラリから入れる定番スライドを選んでね',
+  'よーし、最終確認！準備OKなら骨子を組むよ'];
+// ---------- chips ----------
+document.querySelectorAll('.chips').forEach(g=>{
+  g.addEventListener('click',e=>{
+    const c=e.target.closest('.chip-opt');if(!c)return;
+    if(g.hasAttribute('data-single')){g.querySelectorAll('.chip-opt').forEach(x=>x.classList.remove('sel'));c.classList.add('sel')}
+    else c.classList.toggle('sel');
+    updateLive();
+  });
+});
+// ---------- team ----------
+const teamRows=document.getElementById('teamRows');
+function addMemberRow(name='',role='メンバー'){
+  const d=document.createElement('div');d.className='team-row';
+  d.innerHTML=`<div class="field" style="margin:0"><input placeholder="氏名" value="${name}"></div>
+  <div class="field" style="margin:0"><select><option${role==='リーダー'?' selected':''}>リーダー</option><option${role==='メンバー'?' selected':''}>メンバー</option><option${role==='SME'?' selected':''}>SME</option></select></div>
+  <button type="button" title="削除">×</button>`;
+  d.querySelector('button').onclick=()=>{d.remove();updateLive()};
+  d.querySelector('input').addEventListener('input',updateLive);
+  teamRows.appendChild(d);
+}
+addMemberRow();addMemberRow();
+document.getElementById('addMember').onclick=()=>addMemberRow();
+// ---------- wizard ----------
+const stepNames=['基本情報','タイプ','背景・課題','チーム','ストーリー','必須・制約','確認'];
+const rail=document.getElementById('rail');
+stepNames.forEach((n,i)=>{const d=document.createElement('div');d.className='ritem'+(i===0?' active':'');d.innerHTML=`<span class="rn">${String(i+1).padStart(2,'0')}</span><span>${n}</span>`;rail.appendChild(d)});
+let cur=0;const total=7;
+const show=i=>{
+  document.querySelectorAll('.fstep').forEach(f=>f.classList.toggle('on',+f.dataset.step===i));
+  document.querySelectorAll('.ritem').forEach((p,j)=>{p.classList.toggle('active',j===i);p.classList.toggle('done',j<i)});
+  document.getElementById('prevBtn').style.visibility=i===0?'hidden':'visible';
+  document.getElementById('nextBtn').textContent=i===total-1?'骨子を組む！':'次へ';
+  document.getElementById('stepCount').textContent=`STEP ${i+1} / ${total}`;
+  say(stepMsgs[i],'jump');
+  if(i===total-1)buildReview();
+};
+const val=id=>document.getElementById(id).value.trim();
+const selChips=id=>[...document.querySelectorAll('#'+id+' .chip-opt.sel')].map(c=>c.dataset.v||c.textContent);
+function validate(i){
+  const sh=(id,bad,msg)=>{document.getElementById(id).style.display=bad?'block':'none';if(bad)say(msg,'err');return !bad};
+  if(i===0)return sh('err0',!val('f_title')||!val('f_client'),'あっと！案件名とクライアント名が空っぽだよ');
+  if(i===1)return sh('err1',selChips('f_type').length===0,'タイプを1つは選んでほしいな');
+  if(i===2)return sh('err2',!val('f_pain'),'課題が空だと骨子がスカスカに…書いてみて！');
+  if(i===3)return sh('err3',!val('f_partner')||!val('f_em'),'パートナーとEMは必須だよ〜');
+  return true;
+}
+document.getElementById('nextBtn').onclick=()=>{if(!validate(cur))return;if(cur<total-1){cur++;show(cur)}else{generate()}};
+document.getElementById('prevBtn').onclick=()=>{if(cur>0){cur--;show(cur)}};
+function team(){return [...teamRows.querySelectorAll('.team-row')].map(r=>({name:r.querySelector('input').value.trim(),role:r.querySelector('select').value})).filter(m=>m.name)}
+// ---------- live ----------
+['f_title','f_client','f_industry','f_scope','f_pain','f_trigger','f_reader','f_partner','f_em','f_emph','f_avoid','f_diff','f_notes'].forEach(id=>{const el=document.getElementById(id);el&&el.addEventListener('input',updateLive)});
+document.getElementById('f_comp').addEventListener('change',updateLive);
+document.getElementById('f_industry').addEventListener('change',updateLive);
+function updateLive(){
+  const rows=[['案件',val('f_title')],['クライアント',val('f_client')],
+    ['タイプ',selChips('f_type').map(v=>({system:'システム導入',ai:'AI導入',bpr:'BPR',ic:'内部統制'}[v]||v)).join('・')],
+    ['ソリューション',selChips('f_sol').join('・')],
+    ['体制',[val('f_partner')&&('P: '+val('f_partner')),val('f_em')&&('EM: '+val('f_em')),team().length?('+'+team().length+'名'):''].filter(Boolean).join(' / ')],
+    ['必須スライド',selChips('f_must').length+'点']];
+  document.getElementById('liveBody').innerHTML=rows.map(([k,v])=>`<div class="lrow"><div class="lk">${k}</div><div class="lv${v?'':' empty'}">${v||'未入力'}</div></div>`).join('');
+  const req=[val('f_title'),val('f_client'),selChips('f_type').length,val('f_pain'),val('f_partner'),val('f_em')];
+  const opt=[val('f_industry'),selChips('f_sol').length,val('f_scope'),val('f_trigger'),val('f_reader'),val('f_emph'),val('f_diff')];
+  const pct=Math.round((req.filter(Boolean).length/req.length)*70+(opt.filter(Boolean).length/opt.length)*30);
+  document.getElementById('livePct').textContent=pct+'%';
+  document.getElementById('meterBar').style.width=pct+'%';
+}
+updateLive();
+function buildReview(){
+  document.getElementById('review').innerHTML=
+  `<b>${val('f_title')}</b>（${val('f_client')} ／ ${val('f_industry')||'業界未指定'}）<br>
+  タイプ：${selChips('f_type').join('・')||'—'}　ソリューション：${selChips('f_sol').join('・')||'未定'}<br>
+  体制：Partner ${val('f_partner')}／EM ${val('f_em')}／メンバー${team().length}名<br>
+  必須スライド：${selChips('f_must').join('・')||'なし'}　競合状況：${val('f_comp')}`;
+}
+function brief(){
+  return {title:val('f_title'),client:val('f_client'),industry:val('f_industry'),
+    lang:selChips('f_lang')[0]||'日本語',types:selChips('f_type'),solutions:selChips('f_sol'),
+    scope:val('f_scope'),pain:val('f_pain'),trigger:val('f_trigger'),competition:val('f_comp'),
+    reader:val('f_reader'),team:{partner:val('f_partner'),em:val('f_em'),members:team()},
+    emphasis:val('f_emph'),avoid:val('f_avoid'),differentiators:val('f_diff'),
+    must_include:selChips('f_must'),notes:val('f_notes'),created:new Date().toISOString()};
+}
+// ---------- skeleton ----------
+function cardHTML(arch,title,bullets,src){
+  const srcLabel={gen:'生成',lib:'再利用',team:'チーム'};
+  const srcCls={gen:'src-gen',lib:'src-lib',team:'src-team'};
+  return `<div class="scard" data-src="${src}"><div class="no"></div>
+    <div><span class="arch">${arch}</span></div>
+    <div><div class="ttl" contenteditable="true" spellcheck="false">${title}</div>
+    <ul>${bullets.map(x=>`<li contenteditable="true" spellcheck="false">${x}</li>`).join('')}</ul></div>
+    <span class="src ${srcCls[src]}">${srcLabel[src]}</span>
+    <button class="del" title="削除">×</button></div>`;
+}
+function renumber(){
+  let n=0;
+  document.querySelectorAll('#slides .scard .no').forEach(el=>{el.textContent=String(++n).padStart(2,'0')});
+  const mc=document.querySelector('#planMeta .meta-card:nth-child(4) .v');
+  if(mc)mc.textContent=n+'枚（編集可）';
+}
+document.getElementById('slides').addEventListener('click',e=>{
+  if(e.target.classList.contains('del')){e.target.closest('.scard').remove();renumber();say('1枚減らしたよ。内容が決めるんだから、それでいい！','jump');return}
+  if(e.target.classList.contains('add')){
+    e.target.closest('.sec-div').insertAdjacentHTML('afterend',cardHTML('narrative','（新規スライド）',['論点を入力'],'gen'));
+    renumber();say('1枚追加！タイトルと論点を書いてね','jump');
+  }
+});
+function confetti(){
+  const colors=['#86BC25','#26890D','#FFC93C','#FF8A72','#7EC8E3'];
+  for(let i=0;i<70;i++){
+    const c=document.createElement('div');c.className='confetti';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=colors[i%colors.length];
+    c.style.animationDuration=(2.2+Math.random()*1.8)+'s';
+    c.style.animationDelay=(Math.random()*.6)+'s';
+    c.style.borderRadius=Math.random()>.5?'50%':'2px';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),4800);
+  }
+}
+function generate(){
+  const b=brief();
+  const sol=b.solutions.filter(s=>s!=='その他・未定')[0]||'対象ソリューション';
+  const tp=b.types;
+  const S=[];const D=t=>S.push({arch:'divider',title:t});
+  const A=(arch,title,bullets,src='gen')=>S.push({arch,title,bullets,src});
+  A('cover',`${b.title}のご提案`,[`${b.client} 御中`,'提出日・提出者（自動挿入）']);
+  A('toc','目次',['セクション構成(自動生成)']);
+  D('1. 背景・目的');
+  A('narrative','本プロジェクトの背景・目的',[`背景：${(b.pain||'').slice(0,42)}…`,b.trigger?`トリガー：${b.trigger.slice(0,38)}…`:'クライアントの重要施策との接続','本フェーズの目的・対象成果物・ゴール'],'lib');
+  if(b.must_include.some(m=>m.startsWith('前提条件'))){
+    A('narrative','本提案の前提条件（1/2）',['ソリューション・環境／スコープ／データ提供／構築・運用方式／推進方式'],'lib');
+    A('narrative','本提案の前提条件（2/2）',['レビュー・検収／変更管理／体制・環境／スケジュール／その他'],'lib');
+  }
+  D('2. 課題認識とアプローチ');
+  A('narrative','現状課題の構造化',[`${b.client}の課題をテーマ別に整理`,'優先順位づけと着手順']);
+  if(tp.includes('bpr')||tp.includes('system'))A('diagram','As-Is / To-Be 全体像',['現行業務の課題ポイント','To-Be像と変化点'],'lib');
+  A('process','全体アプローチ',['フェーズ構成と各フェーズの狙い','検討ステップと成果物の対応']);
+  if(tp.includes('system'))A('narrative',`${sol}の概要と適合性`,[`${sol}の標準機能と本件への適合`,'標準機能前提・カスタム範囲の考え方'],'lib');
+  if(tp.includes('ai'))A('diagram','AI活用ユースケースと実現方式',['対象業務とユースケース候補','PoC→本番化のステップ']);
+  if(tp.includes('ic'))A('narrative','統制強化の設計方針',['統制上の課題と対応方針','統制マトリクスの整備範囲']);
+  D('3. 進め方');
+  A('timeline','全体スケジュール',['フェーズ×月のガント','経営報告マイルストーン（★）']);
+  A('org','プロジェクト体制案',[`Partner：${b.team.partner}／EM：${b.team.em}／メンバー${b.team.members.length}名`,'貴社・当社・ベンダーの役割分担'],'team');
+  A('narrative','スコープと成果物',['当社作業と貴社作業の切り分け','成果物一覧と検収の考え方']);
+  D('4. 実績・体制の裏づけ');
+  if(b.must_include.includes('導入事例集'))A('mixed','関連する支援事例',['同種案件の実績サマリー','成果数値'],'lib');
+  A('narrative','本件における当社の強み',[b.differentiators?b.differentiators.slice(0,44)+'…':'専門性・実績・体制の整理','（強調指示を反映）']);
+  if(b.must_include.includes('会社・サービス紹介'))A('narrative','会社・サービス紹介',['ライブラリから挿入'],'lib');
+  if(b.must_include.includes('セキュリティ・品質管理'))A('narrative','セキュリティ・品質管理体制',['ライブラリから挿入'],'lib');
+  D('5. お見積り・次のステップ');
+  A('table','お見積り',[b.notes&&b.notes.includes('概算')?'概算レンジで提示（要望反映）':'フェーズ別・役務別の御見積','前提条件との対応']);
+  A('process','ご契約までの流れ',['提案説明→質疑→契約→キックオフ','想定日程']);
+  const nS=S.filter(s=>s.arch!=='divider').length;
+  const meta=[['案件',b.title],['クライアント',b.client],['タイプ',tp.map(v=>({system:'システム導入',ai:'AI導入',bpr:'BPR',ic:'内部統制'}[v]||v)).join('・')],['骨子スライド数',nS+'枚（編集可）'],['競合状況',b.competition]];
+  document.getElementById('planMeta').innerHTML=meta.map(([k,v])=>`<div class="meta-card"><div class="k">${k}</div><div class="v">${v||'—'}</div></div>`).join('');
+  const beats=[['BEAT 1','課題を正確に理解している（背景・構造化）'],['BEAT 2','解く順番と方法が明確（アプローチ・適合性）'],
+    ['BEAT 3','計画が現実的でリスク管理されている（進め方・前提）'],['BEAT 4','任せられる体制がある（体制・実績）'],
+    ['BEAT 5','意思決定の材料が揃う（見積・次のステップ）']];
+  document.getElementById('beats').innerHTML=beats.map(([n,p])=>`<div class="beat"><div class="n">${n}</div><p>${p}</p></div>`).join('');
+  document.getElementById('slides').innerHTML=S.map(sl=>{
+    if(sl.arch==='divider')return `<div class="sec-div"><span class="lb">${sl.title}</span><span class="ln"></span><button class="add" type="button">＋ スライド追加</button></div>`;
+    return cardHTML(sl.arch,sl.title,sl.bullets,sl.src||'gen');
+  }).join('');
+  renumber();
+  window.__brief=b;
+  document.getElementById('pl0').classList.remove('on');
+  document.getElementById('pl1').classList.add('on');
+  document.getElementById('skel').classList.add('on');
+  say('じゃーん！骨子できたよ。'+nS+'枚から始めるけど、増やすも減らすも自由！','party');
+  confetti();
+  document.getElementById('skel').scrollIntoView({behavior:'smooth'});
+}
+// ---------- approve / download ----------
+function dl(name,obj){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.download=name;a.click()}
+function collectPlan(approved){
+  const out=[];let n=0;
+  [...document.querySelectorAll('#slides .scard, #slides .sec-div')].forEach(el=>{
+    if(el.classList.contains('sec-div')){out.push({type:'divider',title:el.querySelector('.lb').textContent});return}
+    n++;
+    out.push({type:'slide',n,archetype:el.querySelector('.arch').textContent,
+      title:el.querySelector('.ttl').textContent.trim(),
+      bullets:[...el.querySelectorAll('li')].map(li=>li.textContent.trim()).filter(Boolean),
+      source:el.querySelector('.src').textContent.trim()});
+  });
+  return {brief_title:window.__brief?.title,generated:new Date().toISOString(),approved:approved||null,slides:out};
+}
+document.getElementById('dlBrief').onclick=()=>dl('brief.json',window.__brief||{});
+document.getElementById('dlPlan').onclick=()=>dl('deckplan.json',collectPlan(null));
+document.getElementById('approveBtn').onclick=()=>{
+  const who=prompt('承認者名（Partner / EM）');if(!who)return;
+  const note=document.getElementById('approvedNote');
+  note.style.display='block';
+  note.textContent=`承認：${who}（${new Date().toLocaleString('ja-JP')}）— deckplan_approved.json を保存したよ`;
+  say('承認ありがとう！ビルド班に引き継ぐね。おつかれさま！','party');confetti();
+  dl('deckplan_approved.json',collectPlan({by:who,at:new Date().toISOString()}));
+};
+document.getElementById('backToForm').onclick=()=>{document.getElementById('form').scrollIntoView({behavior:'smooth'})};
+</script>
+</body>
+</html>
