@@ -234,8 +234,10 @@ footer{border-top:1px solid var(--hair);padding:22px 0 30px;font-family:var(--mo
       <div class="fstep" data-step="2">
         <h3>背景・課題</h3>
         <p class="hint">「背景・目的」と課題構造化スライドの原料。具体的なほど骨子の精度が上がります。</p>
+        <div class="field"><label>案件の背景・経緯 <span class="why">→ 背景スライドの文脈</span></label><textarea id="f_background" placeholder="例：昨年度に開示業務のアセスメントを実施済み。中計で決算早期化を掲げており、本件はその第2弾。関連して基幹更改PJが並走中"></textarea></div>
         <div class="field"><label>クライアントの現状と課題 <b>＊</b><span class="why">→ 背景・課題スライド</span></label><textarea id="f_pain" placeholder="例：開示作成が属人化・手作業中心で、版管理や承認の統制面にも課題。決算は12営業日超"></textarea></div>
         <div class="field"><label>案件のきっかけ・トリガー <span class="why">→ ストーリーの起点</span></label><textarea id="f_trigger" placeholder="例：新CFO就任により業務標準化の機運。先行フェーズのPoCが好評"></textarea></div>
+        <div class="field"><label>使ってよい事実・数値 <span class="why">→ 捏造防止：スライドはここにある実数のみ使用</span></label><textarea id="f_facts" placeholder="例：経費精算 月4,000件／経理12名／子会社3社／決算11営業日／現行システム：SAP ECC6.0（2027保守切れ）"></textarea></div>
         <div class="grid2">
           <div class="field"><label>競合状況 <span class="why">→ 訴求の力点</span></label><select id="f_comp"><option>単独指名</option><option>コンペ（競合あり）</option><option>既存ベンダーからのリプレース</option><option>不明</option></select></div>
           <div class="field"><label>読み手・決裁プロセス <span class="why">→ トーン・粒度</span></label><input id="f_reader" placeholder="例：CFO決裁。経理部長が実質評価者"></div>
@@ -263,12 +265,18 @@ footer{border-top:1px solid var(--hair);padding:22px 0 30px;font-family:var(--mo
       </div>
 
       <div class="fstep" data-step="5">
-        <h3>必須スライド・制約</h3>
-        <p class="hint">ライブラリから必ず入れるものと、その他の制約。</p>
+        <h3>スケジュール・見積もり・制約</h3>
+        <p class="hint">スケジュール表・見積もりスライドの原料。確定と概算の区別は必ず明記してください。</p>
+        <div class="grid2">
+          <div class="field"><label>開始希望時期 <span class="why">→ スケジュール表の起点</span></label><input id="f_start" placeholder="例：2026年10月（契約後2週間以内）"></div>
+          <div class="field"><label>想定期間・フェーズ構成 <span class="why">→ フェーズ×月の設計</span></label><input id="f_duration" placeholder="例：全体10ヶ月（Phase1構想3ヶ月＋Phase2導入7ヶ月）"></div>
+        </div>
+        <div class="field"><label>重要マイルストーン・締切 <span class="why">→ スケジュール表の節目</span></label><textarea id="f_milestones" placeholder="例：12月末 経営会議で構想報告／来期期初に新プロセス稼働／監査対応は6月まで"></textarea></div>
+        <div class="field"><label>見積もりの構成（確定／概算の区別） <span class="why">→ 見積もりスライド：どこまで確定見積もり、どこから概算見積もりか</span></label><textarea id="f_estimate" placeholder="例：Phase1（構想策定）＝確定見積もり 1,200万円。Phase2以降＝概算レンジで提示（Phase1完了時に確定）。出精値引きは記載しない"></textarea></div>
         <div class="field"><label>必ず含める再利用スライド <span class="why">→ ライブラリ挿入</span></label>
           <div class="chips" id="f_must"><span class="chip-opt sel">前提条件（2枚）</span><span class="chip-opt sel">体制図</span><span class="chip-opt">会社・サービス紹介</span><span class="chip-opt">ソリューション概要説明</span><span class="chip-opt">導入事例集</span><span class="chip-opt">セキュリティ・品質管理</span></div>
         </div>
-        <div class="field"><label>その他の要望・制約</label><textarea id="f_notes" placeholder="例：見積は概算レンジで提示。英文サマリーを1枚追加"></textarea></div>
+        <div class="field"><label>その他の要望・制約</label><textarea id="f_notes" placeholder="例：英文サマリーを1枚追加"></textarea></div>
       </div>
 
       <div class="fstep" data-step="6">
@@ -394,9 +402,12 @@ function buildReview(){
 function brief(){
   return {title:val('f_title'),client:val('f_client'),industry:val('f_industry'),
     lang:selChips('f_lang')[0]||'日本語',types:selChips('f_type'),solutions:selChips('f_sol'),
-    scope:val('f_scope'),pain:val('f_pain'),trigger:val('f_trigger'),competition:val('f_comp'),
+    scope:val('f_scope'),background:val('f_background'),pain:val('f_pain'),
+    trigger:val('f_trigger'),facts:val('f_facts'),competition:val('f_comp'),
     reader:val('f_reader'),team:{partner:val('f_partner'),em:val('f_em'),members:team()},
     emphasis:val('f_emph'),avoid:val('f_avoid'),differentiators:val('f_diff'),
+    schedule:{start:val('f_start'),duration:val('f_duration'),milestones:val('f_milestones')},
+    estimate_structure:val('f_estimate'),
     must_include:selChips('f_must'),notes:val('f_notes'),created:new Date().toISOString()};
 }
 // skeleton card helpers
