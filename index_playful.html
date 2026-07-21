@@ -603,13 +603,31 @@ function collectPlan(approved){
 }
 document.getElementById('dlBrief').onclick=()=>dl('brief.json',window.__brief||{});
 document.getElementById('dlPlan').onclick=()=>dl('deckplan.json',collectPlan(null));
-document.getElementById('approveBtn').onclick=()=>{
+// Backend intake webhook (n8n → runner → planning). Overridable via ?wh= for testing.
+const PF_WEBHOOK=new URLSearchParams(location.search).get('wh')
+  ||'https://n8n-n8n.avxdjj.easypanel.host/webhook/pf-intake';
+document.getElementById('approveBtn').onclick=async()=>{
   const who=prompt('承認者名（Partner / EM）');if(!who)return;
   const note=document.getElementById('approvedNote');
   note.style.display='block';
-  note.textContent=`承認：${who}（${new Date().toLocaleString('ja-JP')}）— deckplan_approved.json を保存したよ`;
-  say('承認ありがとう！ビルド班に引き継ぐね。おつかれさま！','party');confetti();
-  dl('deckplan_approved.json',collectPlan({by:who,at:new Date().toISOString()}));
+  const at=new Date().toISOString();
+  const plan=collectPlan({by:who,at});
+  const payload={...(window.__brief||{}),_approved_by:who,_approved_at:at,_deckplan:plan};
+  dl('deckplan_approved.json',plan); // local backup regardless of link result
+  note.textContent=`承認：${who}（${new Date().toLocaleString('ja-JP')}）— 起案を依頼しているよ…`;
+  try{
+    const r=await fetch(PF_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok){note.textContent=`承認：${who}（${new Date().toLocaleString('ja-JP')}）— `
+      +`起案を依頼したよ（ID: ${j.slug||'受付済み'}）。バックエンドで骨子を作成中！`;
+      say('承認ありがとう！ビルド班に引き継ぐね。おつかれさま！','party');confetti();}
+    else{throw new Error('HTTP '+r.status);}
+  }catch(e){
+    note.textContent=`承認：${who} — バックエンド連携に失敗（${e.message}）。`
+      +`deckplan_approved.json は保存済みだよ。ネットワーク/連携先を確認してね。`;
+    say('連携に失敗しちゃった…保存したJSONは手元にあるから大丈夫！','err');
+  }
 };
 document.getElementById('backToForm').onclick=()=>{document.getElementById('form').scrollIntoView({behavior:'smooth'})};
 </script>
